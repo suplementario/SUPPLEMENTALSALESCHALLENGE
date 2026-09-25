@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Supplemental Sales Challenge - Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --bg-primary:#0a0a0f; --bg-card:#12121a; --bg-hover:#1a1a2e;
+    --text-primary:#e0e0e0; --text-secondary:#888;
+    --gold:#d4a574; --gold-bright:#f5c842;
+    --border:#2a2a3e; --success:#4caf50; --danger:#e74c3c; --warning:#ff9800;
+    --logo-h: 153px;
+  }
+  html, body { overflow-x: hidden; }
+  body{font-family:'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);
+    color:var(--text-primary);min-height:100vh;padding:0;
+    background-image:radial-gradient(circle at 50% 0%,rgba(212,165,116,0.08) 0%,transparent 60%);}
+
+  /* ===== FRANJA DEL LOGO ===== */
+  .logo-header{
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+    height:var(--logo-h);
+    overflow:hidden;
+    position:relative;
+    background:#0a0a0f;
+    border-bottom:1px solid var(--border);
+  }
+  .logo-header img{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100vw;
+    height:auto;
+    display:block;
+    transform: translateY(calc(-100% + var(--logo-h)));
+    pointer-events:none;
+    user-select:none;
+  }
+
+  .page-content{ padding:2rem; }
+
+  .ref-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+    padding:2rem 1.5rem;margin-bottom:2rem;text-align:center;position:relative;overflow:hidden;}
+  .ref-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .ref-img{width:100%;max-width:1400px;height:auto;border-radius:12px;object-fit:contain;
+    box-shadow:0 12px 48px rgba(0,0,0,0.7);display:block;margin:0 auto;}
+  .img-fb{padding:3rem 2rem;color:var(--text-secondary);display:none;}
+  .img-fb p:first-child{font-size:1.3rem;margin-bottom:0.5rem;}
+  .img-fb p:last-child{font-size:0.95rem;}
+
+  .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-bottom:2rem;
+    max-width:600px;margin-left:auto;margin-right:auto;}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center;}
+  .card .value{font-size:2.4rem;font-weight:800;color:var(--gold-bright);margin-bottom:0.3rem;}
+  .card .label{font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+  .table-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:2rem;}
+
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  thead{background:var(--bg-hover);}
+  th{padding:1rem 1.5rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;
+    color:var(--gold);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:1rem 1.5rem;font-size:0.95rem;border-bottom:1px solid var(--border);}
+  tbody tr:hover{background:var(--bg-hover);}
+  .name{font-weight:600;}
+  .id{font-size:0.8rem;color:var(--text-secondary);font-family:monospace;}
+
+  /* Nombre clickeable */
+  .agent-btn{
+    background:none;border:none;color:var(--text-primary);font-family:inherit;font-size:1rem;
+    font-weight:600;cursor:pointer;padding:0;text-align:left;
+    border-bottom:1px dashed transparent;transition:all 0.15s;
+  }
+  .agent-btn:hover{ color:var(--gold-bright); border-bottom-color:var(--gold-bright); }
+  .agent-btn::after{ content:" 🔍"; font-size:0.75rem; opacity:0.5; }
+
+  .pol-cell{display:flex;flex-direction:column;line-height:1.3;}
+  .pol-cell .p-count{font-weight:700;color:var(--gold-bright);font-size:1.05rem;}
+  .pol-cell .p-nap{font-size:0.78rem;color:var(--text-secondary);}
+  .pol-cell .p-nap b{color:var(--gold);}
+
+  .prog-wrap{display:flex;align-items:center;gap:0.65rem;min-width:220px;}
+  .prog-bar{position:relative;flex:1;height:10px;background:var(--bg-hover);
+    border-radius:5px;overflow:hidden;min-width:120px;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));
+    border-radius:5px;transition:width 0.5s ease;}
+  .prog-fill.full{background:linear-gradient(90deg,#4caf50,#8bc34a);}
+  .prog-label{font-size:0.8rem;color:var(--text-secondary);min-width:60px;text-align:right;font-weight:600;}
+  .prog-label b{color:var(--gold-bright);}
+
+  .msg{text-align:center;padding:3rem 1rem;color:var(--text-secondary);}
+  .msg.error{color:var(--danger);}
+  .spinner{display:inline-block;width:40px;height:40px;border:3px solid var(--border);
+    border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ============================================
+     MODAL DE DETALLE POR AGENTE
+     ============================================ */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(4px);
+    z-index:9999;
+    padding:2rem 1rem;
+    overflow-y:auto;
+    animation:fadeIn 0.2s ease;
+  }
+  .modal-overlay.open{ display:block; }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+
+  .modal{
+    max-width:1100px;
+    margin:0 auto;
+    background:var(--bg-card);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,0.9);
+    animation:slideUp 0.25s ease;
+  }
+  @keyframes slideUp{ from{transform:translateY(30px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+
+  .modal-header{
+    padding:1.5rem 2rem;
+    background:linear-gradient(135deg, rgba(212,165,116,0.15), rgba(245,200,66,0.08));
+    border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;
+    position:relative;
+  }
+  .modal-header::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .modal-title{ display:flex; flex-direction:column; gap:0.25rem; }
+  .modal-title h3{ font-size:1.4rem; color:var(--gold-bright); font-weight:800; letter-spacing:0.5px; }
+  .modal-title .agent-meta{
+    font-size:0.85rem; color:var(--text-secondary); font-family:monospace; letter-spacing:1px;
+  }
+  .modal-title .agent-summary{
+    margin-top:0.5rem; display:flex; gap:1.2rem; flex-wrap:wrap;
+    font-size:0.85rem; color:var(--text-secondary);
+  }
+  .modal-title .agent-summary b{ color:var(--gold-bright); font-weight:700; }
+  .modal-close{
+    background:transparent; border:1px solid var(--border); color:var(--text-secondary);
+    width:38px; height:38px; border-radius:50%; cursor:pointer;
+    font-size:1.3rem; line-height:1; display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; flex-shrink:0;
+  }
+  .modal-close:hover{ border-color:var(--danger); color:var(--danger); background:rgba(231,76,60,0.08); }
+
+  .modal-body{ padding:1.5rem 2rem 2rem; max-height:70vh; overflow-y:auto; }
+  .modal-body::-webkit-scrollbar{ width:8px; }
+  .modal-body::-webkit-scrollbar-track{ background:var(--bg-hover); border-radius:4px; }
+  .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  .modal-body::-webkit-scrollbar-thumb:hover{ background:var(--gold); }
+
+  .modal-table{ width:100%; border-collapse:collapse; font-size:0.85rem; min-width:700px; }
+  .modal-table thead{ background:var(--bg-hover); position:sticky; top:0; z-index:1; }
+  .modal-table th{
+    padding:0.75rem 1rem; text-align:left; font-size:0.7rem; text-transform:uppercase;
+    letter-spacing:1px; color:var(--gold); font-weight:600;
+    border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  .modal-table td{
+    padding:0.75rem 1rem; border-bottom:1px solid var(--border);
+    font-size:0.85rem; white-space:nowrap;
+  }
+  .modal-table tbody tr:hover{ background:var(--bg-hover); }
+  .modal-table tbody tr:last-child td{ border-bottom:none; }
+  .modal-table .col-num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .modal-table .col-num.strong{ color:var(--gold-bright); font-weight:700; }
+  .modal-table .col-id{ font-family:monospace; color:var(--text-secondary); font-size:0.78rem; }
+  .status-pill{
+    display:inline-block; padding:0.15rem 0.6rem; border-radius:50px;
+    font-size:0.7rem; font-weight:600; letter-spacing:0.5px;
+    background:rgba(76,175,80,0.15); color:var(--success);
+    border:1px solid rgba(76,175,80,0.3);
+  }
+
+  .modal-empty{ text-align:center; padding:2rem; color:var(--text-secondary); }
+
+  @media(max-width:768px){
+    :root { --logo-h: 105px; }
+    .page-content{padding:1rem;}
+    .ref-panel{padding:1rem;}
+    .summary{gap:0.75rem;}
+    .card{padding:1rem 0.5rem;}
+    .card .value{font-size:1.8rem;}
+    .card .label{font-size:0.7rem;letter-spacing:0.5px;}
+    .modal-overlay{padding:0.75rem 0.5rem;}
+    .modal-header{padding:1.2rem 1rem;}
+    .modal-title h3{font-size:1.1rem;}
+    .modal-body{padding:1rem; max-height:75vh;}
+
+    .scroll{overflow-x:visible;}
+    table, thead, tbody, tr, td { display:block; width:100%; }
+    thead{display:none;}
+
+    tbody tr{
+      background:var(--bg-hover);
+      border:1px solid var(--border);
+      border-left:3px solid var(--gold);
+      border-radius:10px;
+      padding:0.75rem 1rem;
+      margin-bottom:0.75rem;
+    }
+    tbody tr:hover{background:var(--bg-hover);}
+
+    tbody td{
+      padding:0.5rem 0;
+      border-bottom:1px dashed rgba(255,255,255,0.06);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:0.75rem;
+      font-size:0.9rem;
+    }
+    tbody td:last-child{border-bottom:none;padding-bottom:0;}
+    tbody td:first-child{padding-top:0;}
+
+    tbody td::before{
+      content: attr(data-label);
+      font-size:0.7rem;
+      color:var(--text-secondary);
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-weight:600;
+      flex-shrink:0;
+      min-width:70px;
+    }
+    tbody td[data-label="#"]{justify-content:flex-start;}
+    tbody td[data-label="#"]::before{margin-right:0.5rem;}
+    tbody td[data-label="Agente"]{justify-content:space-between;}
+    tbody td[data-label="Agente"] .agent-btn{text-align:right;}
+    tbody td[data-label="ID Producer"] .id{text-align:right;}
+    tbody td[data-label="Pólizas / NAP"]{align-items:flex-start;}
+    tbody td[data-label="Pólizas / NAP"] .pol-cell{text-align:right;width:100%;align-items:flex-end;}
+    tbody td[data-label="Progreso"]{flex-direction:column;align-items:stretch;gap:0.4rem;}
+    tbody td[data-label="Progreso"]::before{margin-bottom:0.25rem;}
+    tbody td[data-label="Progreso"] .prog-wrap{min-width:0;}
+    tbody td[data-label="Progreso"] .prog-bar{min-width:0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== FRANJA DEL LOGO ===== -->
+<header class="logo-header" id="logoHeader">
+  <img id="logoImg" src="" alt="Loyal Insurance Group LLC" />
+</header>
+
+<div class="page-content">
+
+  <section class="ref-panel">
+    <img id="refImg" class="ref-img" alt="Referencia de la competencia" />
+    <div id="imgFb" class="img-fb">
+      <p>🖼️ Imagen no disponible</p>
+      <p>Verifica que el archivo de Drive esté compartido públicamente.</p>
+    </div>
+  </section>
+
+  <section class="summary">
+    <div class="card"><div class="value" id="sMeta">—</div><div class="label">Meta (NAP)</div></div>
+    <div class="card"><div class="value" id="sDias">—</div><div class="label">Días Restantes</div></div>
+  </section>
+
+  <section class="table-box">
+    <div class="scroll" id="tContent">
+      <div class="msg"><div class="spinner"></div><p>Cargando datos...</p></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== MODAL DE DETALLE ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title">
+        <h3 id="modalAgentName">—</h3>
+        <div class="agent-meta" id="modalAgentId">—</div>
+        <div class="agent-summary" id="modalAgentSummary"></div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+const SUPABASE_URL      = 'https://wqfohbbfztpzmteoyipq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2Dne6V-r7d2CwFuzX4ZfGA_V5HCrCZt';
+
+const TBL_COMP = 'Competicion';
+const TBL_PROD = 'Produccion';
+
+const C_NAME = 'Agente';
+const C_ID   = 'ID Producer';
+const P_ID   = 'ID AGENTE';
+const P_EMI  = 'EMISION';
+
+const P_NAP_CANDIDATES = ['NAP','NAPS','N.A.P.','N.A.P','VALOR NAP','VALOR_NAP','VALORNAP','TOTAL NAP'];
+const EXCLUDED_PRODUCTS = ['DVH'];
+const GOAL_NAP = 5000;
+
+const RANGE_START = new Date(2026, 8, 21);
+const RANGE_END   = new Date(2026, 9, 18);
+
+const DRIVE_ID = '1MatCrbJ9Qw-0tLwUDg0x9Bh5UTzy5kl2';
+const IMG_URL  = `https://drive.google.com/thumbnail?id=${DRIVE_ID}&sz=w1600`;
+const IMG_FB   = `https://lh3.googleusercontent.com/d/${DRIVE_ID}=w1600`;
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let AGENTS_DATA = [];    // Resultado final que se renderiza
+let PROD_COLUMNS = [];   // Columnas de la tabla Produccion (para el modal)
+
+// ============================================================
+// LOG
+// ============================================================
+function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
+
+// ============================================================
+// NORMALIZACIÓN
+// ============================================================
+function normId(v) {
+  if (v === null || v === undefined || v === '') return '';
+  return String(v).trim().toUpperCase().replace(/^0+/, '') || '0';
+}
+function parseDate(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (s.includes('/')) {
+    const p = s.split('/');
+    if (p.length !== 3) return null;
+    let m = parseInt(p[0], 10), d = parseInt(p[1], 10), y = parseInt(p[2], 10);
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return new Date(y, m - 1, d);
+  }
+  if (s.includes('-')) {
+    const p = s.split('-');
+    if (p.length === 3 && p[0].length === 4) {
+      const y = parseInt(p[0], 10), m = parseInt(p[1], 10), d = parseInt(p[2].substring(0,2), 10);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m - 1, d);
+    }
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+function formatNum(n) {
+  const num = Number(n);
+  if (!isFinite(num)) return '0';
+  return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+function parseNap(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return isNaN(v) ? 0 : v;
+  const clean = String(v).replace(/[^0-9.\-]/g, '');
+  const n = parseFloat(clean);
+  return isNaN(n) ? 0 : n;
+}
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ============================================================
+// FETCH
+// ============================================================
+async function fetchAll(tableName) {
+  const PAGE = 1000;
+  const all = [];
+  let from = 0;
+  while (true) {
+    const url = `${SUPABASE_URL}/rest/v1/${tableName}?select=*`;
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Range': `${from}-${from + PAGE - 1}`,
+      'Accept': 'application/json'
+    };
+    const r = await fetch(url, { headers });
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(`HTTP ${r.status} en "${tableName}": ${t.substring(0, 150)}`);
+    }
+    const data = await r.json();
+    if (!Array.isArray(data) || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
+// ============================================================
+// AUTODETECCIÓN
+// ============================================================
+function detectProductColumn(prodRows, excluded) {
+  if (!prodRows.length) return null;
+  const cols = Object.keys(prodRows[0]);
+  const targets = excluded.map(e => e.toUpperCase());
+  for (const col of cols) {
+    for (const row of prodRows) {
+      const val = row[col];
+      if (val === null || val === undefined) continue;
+      const v = String(val).toUpperCase().trim();
+      if (targets.some(t => v === t || v.includes(t))) return col;
+    }
+  }
+  return null;
+}
+
+function detectNapColumn(prodRows, sample) {
+  const cols = Object.keys(sample);
+  for (const cand of P_NAP_CANDIDATES) {
+    const found = cols.find(c => c.toLowerCase().trim() === cand.toLowerCase().trim());
+    if (found) return found;
+  }
+  const partial = cols.find(c => c.toLowerCase().includes('nap'));
+  if (partial) return partial;
+
+  const skip = ['emision','fecha','mes','agente','id','nombre','plan','producto','comision','commission','poliza'];
+  for (const c of cols) {
+    const lc = c.toLowerCase();
+    if (skip.some(s => lc.includes(s))) continue;
+    let numericCount = 0, totalCount = 0;
+    for (let i = 0; i < Math.min(prodRows.length, 30); i++) {
+      const v = prodRows[i][c];
+      if (v === null || v === undefined || v === '') continue;
+      totalCount++;
+      if (!isNaN(parseNap(v)) && parseNap(v) > 0) numericCount++;
+    }
+    if (totalCount > 0 && numericCount / totalCount > 0.7) {
+      const samples = prodRows.slice(0, 10).map(r => parseNap(r[c])).filter(n => n > 0);
+      const avg = samples.reduce((a, b) => a + b, 0) / (samples.length || 1);
+      if (avg > 5) return c;
+    }
+  }
+  return null;
+}
+
+// ============================================================
+// CARGA PRINCIPAL
+// ============================================================
+async function load() {
+  const tContent = document.getElementById('tContent');
+  tContent.innerHTML = `<div class="msg"><div class="spinner"></div><p>Cargando datos...</p></div>`;
+
+  try {
+    log(`Descargando "${TBL_COMP}"...`);
+    const comp = await fetchAll(TBL_COMP);
+    log(`${TBL_COMP}: ${comp.length} registros`);
+
+    log(`Descargando "${TBL_PROD}"...`);
+    const prod = await fetchAll(TBL_PROD);
+    log(`${TBL_PROD}: ${prod.length} registros`);
+
+    if (comp.length === 0) throw new Error(`La tabla "${TBL_COMP}" está vacía.`);
+    if (prod.length === 0) {
+      tContent.innerHTML = `<div class="msg"><p>📭 "${TBL_PROD}" está vacía.</p></div>`;
+      return;
+    }
+
+    const cCols = Object.keys(comp[0]);
+    const pCols = Object.keys(prod[0]);
+
+    if (!cCols.includes(C_ID))   throw new Error(`Falta "${C_ID}" en ${TBL_COMP}`);
+    if (!cCols.includes(C_NAME)) throw new Error(`Falta "${C_NAME}" en ${TBL_COMP}`);
+    if (!pCols.includes(P_ID))   throw new Error(`Falta "${P_ID}" en ${TBL_PROD}`);
+    if (!pCols.includes(P_EMI))  throw new Error(`Falta "${P_EMI}" en ${TBL_PROD}`);
+
+    // Guardar columnas para el modal (en el orden original)
+    PROD_COLUMNS = pCols;
+
+    // Excluir DVH
+    const productCol = detectProductColumn(prod, EXCLUDED_PRODUCTS);
+    let prodSinExcluidos = prod;
+    if (productCol) {
+      log(`Columna de producto detectada: "${productCol}"`);
+      const excluded = EXCLUDED_PRODUCTS.map(e => e.toUpperCase());
+      prodSinExcluidos = prod.filter(row => {
+        const v = row[productCol];
+        if (v === null || v === undefined) return true;
+        const val = String(v).toUpperCase().trim();
+        return !excluded.some(e => val === e || val.includes(e));
+      });
+      log(`Excluidos por producto (${EXCLUDED_PRODUCTS.join(', ')}): ${prod.length - prodSinExcluidos.length} registros`);
+    }
+
+    const napCol = detectNapColumn(prodSinExcluidos, prodSinExcluidos[0]);
+    if (napCol) log(`Columna NAP detectada: "${napCol}"`);
+
+    // Filtrar por rango de fechas
+    let inRange = 0;
+    const prodFiltered = prodSinExcluidos.filter(row => {
+      const d = parseDate(row[P_EMI]);
+      if (!d) return false;
+      const dn = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      if (dn >= RANGE_START && dn <= RANGE_END) { inRange++; return true; }
+      return false;
+    });
+    log(`Registros en rango: ${inRange}`);
+
+    // Agrupar por ID: guardamos los registros completos
+    const prodById = new Map();
+    prodFiltered.forEach(row => {
+      const idKey = normId(row[P_ID]);
+      if (!idKey) return;
+      if (!prodById.has(idKey)) prodById.set(idKey, []);
+      prodById.get(idKey).push(row);
+    });
+
+    // Cruzar con Competicion
+    const result = [];
+    comp.forEach(c => {
+      const idKey = normId(c[C_ID]);
+      const records = prodById.get(idKey);
+      if (records && records.length > 0) {
+        // Ordenar por fecha de emisión descendente
+        records.sort((a, b) => {
+          const da = parseDate(a[P_EMI]); const db = parseDate(b[P_EMI]);
+          if (!da && !db) return 0;
+          if (!da) return 1;
+          if (!db) return -1;
+          return db - da;
+        });
+        const totalNap = napCol
+          ? records.reduce((s, r) => s + parseNap(r[napCol]), 0)
+          : 0;
+        result.push({
+          id: c[C_ID],
+          name: c[C_NAME],
+          polizas: records.length,
+          nap: totalNap,
+          records: records,
+          napCol: napCol,
+          productCol: productCol
+        });
+      }
+    });
+
+    result.sort((a, b) => (b.nap - a.nap) || (b.polizas - a.polizas));
+    AGENTS_DATA = result;
+
+    const hoy = new Date();
+    const dias = Math.max(0, Math.ceil((RANGE_END - hoy) / 86400000));
+    document.getElementById('sMeta').textContent = formatNum(GOAL_NAP);
+    document.getElementById('sDias').textContent = dias;
+
+    render(result);
+
+  } catch (err) {
+    console.error(err);
+    tContent.innerHTML = `
+      <div class="msg error">
+        <p>❌ Error al cargar</p>
+        <p style="font-size:0.85rem;margin-top:0.5rem;">${escapeHtml(err.message)}</p>
+      </div>`;
+  }
+}
+
+// ============================================================
+// RENDER DE LA TABLA PRINCIPAL
+// ============================================================
+function render(agents) {
+  const tContent = document.getElementById('tContent');
+
+  if (agents.length === 0) {
+    tContent.innerHTML = `
+      <div class="msg">
+        <p>📭 Ningún agente de "${TBL_COMP}" tiene pólizas con EMISION entre el 21/09/2026 y el 18/10/2026.</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>#</th>
+    <th>Agente</th>
+    <th>ID Producer</th>
+    <th>Pólizas / NAP</th>
+    <th>Progreso (meta ${formatNum(GOAL_NAP)} NAP)</th>
+  </tr></thead><tbody>`;
+
+  agents.forEach((a, i) => {
+    const pct = Math.min(100, (a.nap / GOAL_NAP) * 100);
+    const pctLabel = ((a.nap / GOAL_NAP) * 100).toFixed(1);
+    const isFull = a.nap >= GOAL_NAP;
+
+    html += `<tr>
+      <td data-label="#">${i + 1}</td>
+      <td data-label="Agente">
+        <button class="agent-btn" data-agent-index="${i}">${escapeHtml(a.name || 'Sin nombre')}</button>
+      </td>
+      <td data-label="ID Producer"><span class="id">${escapeHtml(a.id || '—')}</span></td>
+      <td data-label="Pólizas / NAP">
+        <div class="pol-cell">
+          <span class="p-count">${formatNum(a.polizas)} ${a.polizas === 1 ? 'póliza' : 'pólizas'}</span>
+          <span class="p-nap"><b>${formatNum(a.nap)}</b> NAP</span>
+        </div>
+      </td>
+      <td data-label="Progreso">
+        <div class="prog-wrap">
+          <div class="prog-bar">
+            <div class="prog-fill ${isFull ? 'full' : ''}" style="width:${pct}%;"></div>
+          </div>
+          <span class="prog-label"><b>${pctLabel}%</b></span>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  tContent.innerHTML = html;
+
+  // Enlazar botones de agente → modal
+  tContent.querySelectorAll('.agent-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.agentIndex, 10);
+      openModal(AGENTS_DATA[idx]);
+    });
+  });
+}
+
+// ============================================================
+// MODAL DE DETALLE
+// ============================================================
+function openModal(agent) {
+  if (!agent) return;
+
+  document.getElementById('modalAgentName').textContent = agent.name || 'Sin nombre';
+  document.getElementById('modalAgentId').textContent   = `ID Producer: ${agent.id || '—'}`;
+
+  document.getElementById('modalAgentSummary').innerHTML = `
+    <span>📄 <b>${formatNum(agent.polizas)}</b> pólizas</span>
+    <span>💰 <b>${formatNum(agent.nap)}</b> NAP</span>
+    <span>🎯 Meta: <b>${formatNum(GOAL_NAP)}</b> NAP</span>
+  `;
+
+  const body = document.getElementById('modalBody');
+
+  if (!agent.records || agent.records.length === 0) {
+    body.innerHTML = `<div class="modal-empty">Sin pólizas registradas.</div>`;
+  } else {
+    // Columnas preferidas en este orden (si existen)
+    const preferredOrder = [
+      'MES','EMISION','FECHA APLICADA','N° POLIZA','POLIZA','PRODUCTO',
+      'PRIMA','NAP','CANTIDAD DE POLIZAS','ESTATUS','AGENDA','AGENTE','ID AGENTE'
+    ];
+
+    // Construir orden de columnas reales = preferidas + resto
+    const available = PROD_COLUMNS.slice();
+    const order = [];
+    preferredOrder.forEach(p => {
+      const found = available.find(c => c.toLowerCase().trim() === p.toLowerCase().trim());
+      if (found && !order.includes(found)) order.push(found);
+    });
+    available.forEach(c => { if (!order.includes(c)) order.push(c); });
+
+    // Cabecera
+    let tableHtml = `<table class="modal-table"><thead><tr>
+      <th style="width:40px;">#</th>`;
+    order.forEach(col => {
+      tableHtml += `<th>${escapeHtml(col)}</th>`;
+    });
+    tableHtml += `</tr></thead><tbody>`;
+
+    // Filas
+    agent.records.forEach((rec, i) => {
+      tableHtml += `<tr><td class="col-id">${i + 1}</td>`;
+      order.forEach(col => {
+        const val = rec[col];
+        const lc = col.toLowerCase();
+        // Clasificación visual
+        let cls = '';
+        if (lc === 'nap' || lc === 'prima' || lc === 'cantidad de polizas') cls = 'col-num';
+        if (lc === 'nap') cls += ' strong';
+        if (lc.includes('id')) cls = 'col-id';
+
+        let display = val;
+        if (val === null || val === undefined || val === '') {
+          display = '—';
+        } else if (lc === 'nap' || lc === 'prima') {
+          const n = parseNap(val);
+          if (!isNaN(n)) display = formatNum(n);
+        } else if (lc === 'estatus' || lc === 'status') {
+          display = `<span class="status-pill">${escapeHtml(val)}</span>`;
+          tableHtml += `<td class="${cls.trim()}">${display}</td>`;
+          return;
+        }
+
+        tableHtml += `<td class="${cls.trim()}">${escapeHtml(display)}</td>`;
+      });
+      tableHtml += `</tr>`;
+    });
+
+    tableHtml += `</tbody></table>`;
+    body.innerHTML = tableHtml;
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// IMÁGENES
+// ============================================================
+function loadImg() {
+  const logoImg    = document.getElementById('logoImg');
+  const logoHeader = document.getElementById('logoHeader');
+  logoImg.src = IMG_URL;
+  logoImg.onerror = () => {
+    logoImg.onerror = () => { logoHeader.style.display = 'none'; };
+    logoImg.src = IMG_FB;
+  };
+
+  const img = document.getElementById('refImg');
+  const fb  = document.getElementById('imgFb');
+  img.src = IMG_URL;
+  img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
+  img.onerror = () => {
+    img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; };
+    img.src = IMG_FB;
+  };
+}
+
+// ============================================================
+// EVENTOS
+// ============================================================
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+document.addEventListener('DOMContentLoaded', () => { loadImg(); load(); });
+</script>
+
+</body>
+</html>
