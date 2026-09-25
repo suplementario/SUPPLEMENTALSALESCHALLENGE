@@ -12,14 +12,13 @@
     --text-primary:#e0e0e0; --text-secondary:#888;
     --gold:#d4a574; --gold-bright:#f5c842;
     --border:#2a2a3e; --success:#4caf50; --danger:#e74c3c; --warning:#ff9800;
-    --logo-h: 153px;
+    --logo-h: 210px;
   }
   html, body { overflow-x: hidden; }
   body{font-family:'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);
     color:var(--text-primary);min-height:100vh;padding:0;
     background-image:radial-gradient(circle at 50% 0%,rgba(212,165,116,0.08) 0%,transparent 60%);}
 
-  /* ===== FRANJA DEL LOGO ===== */
   .logo-header{
     width:100vw;
     margin-left:calc(50% - 50vw);
@@ -71,7 +70,6 @@
   .name{font-weight:600;}
   .id{font-size:0.8rem;color:var(--text-secondary);font-family:monospace;}
 
-  /* Nombre clickeable */
   .agent-btn{
     background:none;border:none;color:var(--text-primary);font-family:inherit;font-size:1rem;
     font-weight:600;cursor:pointer;padding:0;text-align:left;
@@ -100,34 +98,22 @@
     border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* ============================================
-     MODAL DE DETALLE POR AGENTE
-     ============================================ */
   .modal-overlay{
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(0,0,0,0.75);
-    backdrop-filter:blur(4px);
-    z-index:9999;
-    padding:2rem 1rem;
-    overflow-y:auto;
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+    z-index:9999; padding:2rem 1rem; overflow-y:auto;
     animation:fadeIn 0.2s ease;
   }
   .modal-overlay.open{ display:block; }
   @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
-
   .modal{
-    max-width:1100px;
-    margin:0 auto;
-    background:var(--bg-card);
-    border:1px solid var(--gold);
-    border-radius:16px;
-    overflow:hidden;
+    max-width:1100px; margin:0 auto;
+    background:var(--bg-card); border:1px solid var(--gold);
+    border-radius:16px; overflow:hidden;
     box-shadow:0 24px 80px rgba(0,0,0,0.9);
     animation:slideUp 0.25s ease;
   }
   @keyframes slideUp{ from{transform:translateY(30px);opacity:0;} to{transform:translateY(0);opacity:1;} }
-
   .modal-header{
     padding:1.5rem 2rem;
     background:linear-gradient(135deg, rgba(212,165,116,0.15), rgba(245,200,66,0.08));
@@ -156,13 +142,11 @@
     transition:all 0.15s; flex-shrink:0;
   }
   .modal-close:hover{ border-color:var(--danger); color:var(--danger); background:rgba(231,76,60,0.08); }
-
   .modal-body{ padding:1.5rem 2rem 2rem; max-height:70vh; overflow-y:auto; }
   .modal-body::-webkit-scrollbar{ width:8px; }
   .modal-body::-webkit-scrollbar-track{ background:var(--bg-hover); border-radius:4px; }
   .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
   .modal-body::-webkit-scrollbar-thumb:hover{ background:var(--gold); }
-
   .modal-table{ width:100%; border-collapse:collapse; font-size:0.85rem; min-width:700px; }
   .modal-table thead{ background:var(--bg-hover); position:sticky; top:0; z-index:1; }
   .modal-table th{
@@ -185,11 +169,10 @@
     background:rgba(76,175,80,0.15); color:var(--success);
     border:1px solid rgba(76,175,80,0.3);
   }
-
   .modal-empty{ text-align:center; padding:2rem; color:var(--text-secondary); }
 
   @media(max-width:768px){
-    :root { --logo-h: 105px; }
+    :root { --logo-h: 145px; }
     .page-content{padding:1rem;}
     .ref-panel{padding:1rem;}
     .summary{gap:0.75rem;}
@@ -322,20 +305,11 @@ const DRIVE_ID = '1MatCrbJ9Qw-0tLwUDg0x9Bh5UTzy5kl2';
 const IMG_URL  = `https://drive.google.com/thumbnail?id=${DRIVE_ID}&sz=w1600`;
 const IMG_FB   = `https://lh3.googleusercontent.com/d/${DRIVE_ID}=w1600`;
 
-// ============================================================
-// ESTADO GLOBAL
-// ============================================================
-let AGENTS_DATA = [];    // Resultado final que se renderiza
-let PROD_COLUMNS = [];   // Columnas de la tabla Produccion (para el modal)
+let AGENTS_DATA = [];
+let PROD_COLUMNS = [];
 
-// ============================================================
-// LOG
-// ============================================================
 function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
 
-// ============================================================
-// NORMALIZACIÓN
-// ============================================================
 function normId(v) {
   if (v === null || v === undefined || v === '') return '';
   return String(v).trim().toUpperCase().replace(/^0+/, '') || '0';
@@ -380,9 +354,6 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// ============================================================
-// FETCH
-// ============================================================
 async function fetchAll(tableName) {
   const PAGE = 1000;
   const all = [];
@@ -409,9 +380,6 @@ async function fetchAll(tableName) {
   return all;
 }
 
-// ============================================================
-// AUTODETECCIÓN
-// ============================================================
 function detectProductColumn(prodRows, excluded) {
   if (!prodRows.length) return null;
   const cols = Object.keys(prodRows[0]);
@@ -435,7 +403,6 @@ function detectNapColumn(prodRows, sample) {
   }
   const partial = cols.find(c => c.toLowerCase().includes('nap'));
   if (partial) return partial;
-
   const skip = ['emision','fecha','mes','agente','id','nombre','plan','producto','comision','commission','poliza'];
   for (const c of cols) {
     const lc = c.toLowerCase();
@@ -456,21 +423,13 @@ function detectNapColumn(prodRows, sample) {
   return null;
 }
 
-// ============================================================
-// CARGA PRINCIPAL
-// ============================================================
 async function load() {
   const tContent = document.getElementById('tContent');
   tContent.innerHTML = `<div class="msg"><div class="spinner"></div><p>Cargando datos...</p></div>`;
 
   try {
-    log(`Descargando "${TBL_COMP}"...`);
     const comp = await fetchAll(TBL_COMP);
-    log(`${TBL_COMP}: ${comp.length} registros`);
-
-    log(`Descargando "${TBL_PROD}"...`);
     const prod = await fetchAll(TBL_PROD);
-    log(`${TBL_PROD}: ${prod.length} registros`);
 
     if (comp.length === 0) throw new Error(`La tabla "${TBL_COMP}" está vacía.`);
     if (prod.length === 0) {
@@ -486,14 +445,11 @@ async function load() {
     if (!pCols.includes(P_ID))   throw new Error(`Falta "${P_ID}" en ${TBL_PROD}`);
     if (!pCols.includes(P_EMI))  throw new Error(`Falta "${P_EMI}" en ${TBL_PROD}`);
 
-    // Guardar columnas para el modal (en el orden original)
     PROD_COLUMNS = pCols;
 
-    // Excluir DVH
     const productCol = detectProductColumn(prod, EXCLUDED_PRODUCTS);
     let prodSinExcluidos = prod;
     if (productCol) {
-      log(`Columna de producto detectada: "${productCol}"`);
       const excluded = EXCLUDED_PRODUCTS.map(e => e.toUpperCase());
       prodSinExcluidos = prod.filter(row => {
         const v = row[productCol];
@@ -501,24 +457,17 @@ async function load() {
         const val = String(v).toUpperCase().trim();
         return !excluded.some(e => val === e || val.includes(e));
       });
-      log(`Excluidos por producto (${EXCLUDED_PRODUCTS.join(', ')}): ${prod.length - prodSinExcluidos.length} registros`);
     }
 
     const napCol = detectNapColumn(prodSinExcluidos, prodSinExcluidos[0]);
-    if (napCol) log(`Columna NAP detectada: "${napCol}"`);
 
-    // Filtrar por rango de fechas
-    let inRange = 0;
     const prodFiltered = prodSinExcluidos.filter(row => {
       const d = parseDate(row[P_EMI]);
       if (!d) return false;
       const dn = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      if (dn >= RANGE_START && dn <= RANGE_END) { inRange++; return true; }
-      return false;
+      return dn >= RANGE_START && dn <= RANGE_END;
     });
-    log(`Registros en rango: ${inRange}`);
 
-    // Agrupar por ID: guardamos los registros completos
     const prodById = new Map();
     prodFiltered.forEach(row => {
       const idKey = normId(row[P_ID]);
@@ -527,13 +476,11 @@ async function load() {
       prodById.get(idKey).push(row);
     });
 
-    // Cruzar con Competicion
     const result = [];
     comp.forEach(c => {
       const idKey = normId(c[C_ID]);
       const records = prodById.get(idKey);
       if (records && records.length > 0) {
-        // Ordenar por fecha de emisión descendente
         records.sort((a, b) => {
           const da = parseDate(a[P_EMI]); const db = parseDate(b[P_EMI]);
           if (!da && !db) return 0;
@@ -541,17 +488,14 @@ async function load() {
           if (!db) return -1;
           return db - da;
         });
-        const totalNap = napCol
-          ? records.reduce((s, r) => s + parseNap(r[napCol]), 0)
-          : 0;
+        const totalNap = napCol ? records.reduce((s, r) => s + parseNap(r[napCol]), 0) : 0;
         result.push({
           id: c[C_ID],
           name: c[C_NAME],
           polizas: records.length,
           nap: totalNap,
           records: records,
-          napCol: napCol,
-          productCol: productCol
+          napCol: napCol
         });
       }
     });
@@ -576,9 +520,6 @@ async function load() {
   }
 }
 
-// ============================================================
-// RENDER DE LA TABLA PRINCIPAL
-// ============================================================
 function render(agents) {
   const tContent = document.getElementById('tContent');
 
@@ -629,7 +570,6 @@ function render(agents) {
   html += `</tbody></table>`;
   tContent.innerHTML = html;
 
-  // Enlazar botones de agente → modal
   tContent.querySelectorAll('.agent-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.agentIndex, 10);
@@ -638,15 +578,11 @@ function render(agents) {
   });
 }
 
-// ============================================================
-// MODAL DE DETALLE
-// ============================================================
 function openModal(agent) {
   if (!agent) return;
 
   document.getElementById('modalAgentName').textContent = agent.name || 'Sin nombre';
   document.getElementById('modalAgentId').textContent   = `ID Producer: ${agent.id || '—'}`;
-
   document.getElementById('modalAgentSummary').innerHTML = `
     <span>📄 <b>${formatNum(agent.polizas)}</b> pólizas</span>
     <span>💰 <b>${formatNum(agent.nap)}</b> NAP</span>
@@ -658,13 +594,10 @@ function openModal(agent) {
   if (!agent.records || agent.records.length === 0) {
     body.innerHTML = `<div class="modal-empty">Sin pólizas registradas.</div>`;
   } else {
-    // Columnas preferidas en este orden (si existen)
     const preferredOrder = [
       'MES','EMISION','FECHA APLICADA','N° POLIZA','POLIZA','PRODUCTO',
       'PRIMA','NAP','CANTIDAD DE POLIZAS','ESTATUS','AGENDA','AGENTE','ID AGENTE'
     ];
-
-    // Construir orden de columnas reales = preferidas + resto
     const available = PROD_COLUMNS.slice();
     const order = [];
     preferredOrder.forEach(p => {
@@ -673,39 +606,34 @@ function openModal(agent) {
     });
     available.forEach(c => { if (!order.includes(c)) order.push(c); });
 
-    // Cabecera
-    let tableHtml = `<table class="modal-table"><thead><tr>
-      <th style="width:40px;">#</th>`;
-    order.forEach(col => {
-      tableHtml += `<th>${escapeHtml(col)}</th>`;
-    });
+    let tableHtml = `<table class="modal-table"><thead><tr><th style="width:40px;">#</th>`;
+    order.forEach(col => { tableHtml += `<th>${escapeHtml(col)}</th>`; });
     tableHtml += `</tr></thead><tbody>`;
 
-    // Filas
     agent.records.forEach((rec, i) => {
       tableHtml += `<tr><td class="col-id">${i + 1}</td>`;
       order.forEach(col => {
         const val = rec[col];
         const lc = col.toLowerCase();
-        // Clasificación visual
         let cls = '';
         if (lc === 'nap' || lc === 'prima' || lc === 'cantidad de polizas') cls = 'col-num';
         if (lc === 'nap') cls += ' strong';
         if (lc.includes('id')) cls = 'col-id';
 
-        let display = val;
         if (val === null || val === undefined || val === '') {
-          display = '—';
-        } else if (lc === 'nap' || lc === 'prima') {
-          const n = parseNap(val);
-          if (!isNaN(n)) display = formatNum(n);
-        } else if (lc === 'estatus' || lc === 'status') {
-          display = `<span class="status-pill">${escapeHtml(val)}</span>`;
-          tableHtml += `<td class="${cls.trim()}">${display}</td>`;
+          tableHtml += `<td class="${cls.trim()}">—</td>`;
           return;
         }
-
-        tableHtml += `<td class="${cls.trim()}">${escapeHtml(display)}</td>`;
+        if (lc === 'estatus' || lc === 'status') {
+          tableHtml += `<td class="${cls.trim()}"><span class="status-pill">${escapeHtml(val)}</span></td>`;
+          return;
+        }
+        if (lc === 'nap' || lc === 'prima') {
+          const n = parseNap(val);
+          tableHtml += `<td class="${cls.trim()}">${!isNaN(n) ? formatNum(n) : escapeHtml(val)}</td>`;
+          return;
+        }
+        tableHtml += `<td class="${cls.trim()}">${escapeHtml(val)}</td>`;
       });
       tableHtml += `</tr>`;
     });
@@ -723,9 +651,6 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-// ============================================================
-// IMÁGENES
-// ============================================================
 function loadImg() {
   const logoImg    = document.getElementById('logoImg');
   const logoHeader = document.getElementById('logoHeader');
@@ -745,9 +670,6 @@ function loadImg() {
   };
 }
 
-// ============================================================
-// EVENTOS
-// ============================================================
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalOverlay').addEventListener('click', (e) => {
   if (e.target.id === 'modalOverlay') closeModal();
