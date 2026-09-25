@@ -19,6 +19,7 @@
     color:var(--text-primary);min-height:100vh;padding:0;
     background-image:radial-gradient(circle at 50% 0%,rgba(212,165,116,0.08) 0%,transparent 60%);}
 
+  /* ===== FRANJA DEL LOGO (agencia) ===== */
   .logo-header{
     width:100vw;
     margin-left:calc(50% - 50vw);
@@ -42,6 +43,7 @@
 
   .page-content{ padding:2rem; }
 
+  /* ===== PANEL IMAGEN DE COMPETENCIA ===== */
   .ref-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
     padding:2rem 1.5rem;margin-bottom:2rem;text-align:center;position:relative;overflow:hidden;}
   .ref-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
@@ -236,13 +238,14 @@
 </head>
 <body>
 
-<!-- ===== FRANJA DEL LOGO ===== -->
+<!-- ===== FRANJA DEL LOGO (agencia) ===== -->
 <header class="logo-header" id="logoHeader">
   <img id="logoImg" src="" alt="Loyal Insurance Group LLC" />
 </header>
 
 <div class="page-content">
 
+  <!-- ===== IMAGEN DE LA COMPETENCIA ===== -->
   <section class="ref-panel">
     <img id="refImg" class="ref-img" alt="Referencia de la competencia" />
     <div id="imgFb" class="img-fb">
@@ -301,9 +304,15 @@ const GOAL_NAP = 5000;
 const RANGE_START = new Date(2026, 8, 21);
 const RANGE_END   = new Date(2026, 9, 18);
 
-const DRIVE_ID = '1MatCrbJ9Qw-0tLwUDg0x9Bh5UTzy5kl2';
-const IMG_URL  = `https://drive.google.com/thumbnail?id=${DRIVE_ID}&sz=w1600`;
-const IMG_FB   = `https://lh3.googleusercontent.com/d/${DRIVE_ID}=w1600`;
+// === IMAGEN DEL LOGO (parte superior) ===
+const LOGO_DRIVE_ID = '1chC0zMu-GjoSINFCYo4pNicsi-TaS79L';
+const LOGO_URL      = `https://drive.google.com/thumbnail?id=${LOGO_DRIVE_ID}&sz=w1600`;
+const LOGO_FB       = `https://lh3.googleusercontent.com/d/${LOGO_DRIVE_ID}=w1600`;
+
+// === IMAGEN DE LA COMPETENCIA (panel central) ===
+const REF_DRIVE_ID = '1MatCrbJ9Qw-0tLwUDg0x9Bh5UTzy5kl2';
+const REF_URL      = `https://drive.google.com/thumbnail?id=${REF_DRIVE_ID}&sz=w1600`;
+const REF_FB       = `https://lh3.googleusercontent.com/d/${REF_DRIVE_ID}=w1600`;
 
 let AGENTS_DATA = [];
 let PROD_COLUMNS = [];
@@ -651,22 +660,24 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-function loadImg() {
+function loadImgs() {
+  // --- Logo superior (agencia) ---
   const logoImg    = document.getElementById('logoImg');
   const logoHeader = document.getElementById('logoHeader');
-  logoImg.src = IMG_URL;
+  logoImg.src = LOGO_URL;
   logoImg.onerror = () => {
     logoImg.onerror = () => { logoHeader.style.display = 'none'; };
-    logoImg.src = IMG_FB;
+    logoImg.src = LOGO_FB;
   };
 
+  // --- Imagen de la competencia (panel central) ---
   const img = document.getElementById('refImg');
   const fb  = document.getElementById('imgFb');
-  img.src = IMG_URL;
+  img.src = REF_URL;
   img.onload = () => { fb.style.display = 'none'; img.style.display = 'block'; };
   img.onerror = () => {
     img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; };
-    img.src = IMG_FB;
+    img.src = REF_FB;
   };
 }
 
@@ -678,7 +689,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
 });
 
-document.addEventListener('DOMContentLoaded', () => { loadImg(); load(); });
+document.addEventListener('DOMContentLoaded', () => { loadImgs(); load(); });
 </script>
 
 </body>
