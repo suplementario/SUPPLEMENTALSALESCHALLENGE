@@ -12,7 +12,7 @@
     --text-primary:#e0e0e0; --text-secondary:#888;
     --gold:#d4a574; --gold-bright:#f5c842;
     --border:#2a2a3e; --success:#4caf50; --danger:#e74c3c; --warning:#ff9800;
-    --logo-h: 210px;
+    --logo-h: 400px;
   }
   html, body { overflow-x: hidden; }
   body{font-family:'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);
@@ -149,6 +149,9 @@
   .modal-body::-webkit-scrollbar-track{ background:var(--bg-hover); border-radius:4px; }
   .modal-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
   .modal-body::-webkit-scrollbar-thumb:hover{ background:var(--gold); }
+
+  /* ===== TABLA DEL MODAL (desktop) ===== */
+  .modal-table-scroll{ overflow-x:auto; }
   .modal-table{ width:100%; border-collapse:collapse; font-size:0.85rem; min-width:700px; }
   .modal-table thead{ background:var(--bg-hover); position:sticky; top:0; z-index:1; }
   .modal-table th{
@@ -174,7 +177,7 @@
   .modal-empty{ text-align:center; padding:2rem; color:var(--text-secondary); }
 
   @media(max-width:768px){
-    :root { --logo-h: 145px; }
+    :root { --logo-h: 260px; }
     .page-content{padding:1rem;}
     .ref-panel{padding:1rem;}
     .summary{gap:0.75rem;}
@@ -186,11 +189,14 @@
     .modal-title h3{font-size:1.1rem;}
     .modal-body{padding:1rem; max-height:75vh;}
 
+    /* === Tabla principal: modo tarjeta === */
     .scroll{overflow-x:visible;}
-    table, thead, tbody, tr, td { display:block; width:100%; }
-    thead{display:none;}
+    .table-box table, .table-box thead, .table-box tbody, .table-box tr, .table-box td {
+      display:block; width:100%;
+    }
+    .table-box thead{display:none;}
 
-    tbody tr{
+    .table-box tbody tr{
       background:var(--bg-hover);
       border:1px solid var(--border);
       border-left:3px solid var(--gold);
@@ -198,9 +204,7 @@
       padding:0.75rem 1rem;
       margin-bottom:0.75rem;
     }
-    tbody tr:hover{background:var(--bg-hover);}
-
-    tbody td{
+    .table-box tbody td{
       padding:0.5rem 0;
       border-bottom:1px dashed rgba(255,255,255,0.06);
       display:flex;
@@ -209,10 +213,9 @@
       gap:0.75rem;
       font-size:0.9rem;
     }
-    tbody td:last-child{border-bottom:none;padding-bottom:0;}
-    tbody td:first-child{padding-top:0;}
-
-    tbody td::before{
+    .table-box tbody td:last-child{border-bottom:none;padding-bottom:0;}
+    .table-box tbody td:first-child{padding-top:0;}
+    .table-box tbody td::before{
       content: attr(data-label);
       font-size:0.7rem;
       color:var(--text-secondary);
@@ -222,17 +225,63 @@
       flex-shrink:0;
       min-width:70px;
     }
-    tbody td[data-label="#"]{justify-content:flex-start;}
-    tbody td[data-label="#"]::before{margin-right:0.5rem;}
-    tbody td[data-label="Agente"]{justify-content:space-between;}
-    tbody td[data-label="Agente"] .agent-btn{text-align:right;}
-    tbody td[data-label="ID Producer"] .id{text-align:right;}
-    tbody td[data-label="Pólizas / NAP"]{align-items:flex-start;}
-    tbody td[data-label="Pólizas / NAP"] .pol-cell{text-align:right;width:100%;align-items:flex-end;}
-    tbody td[data-label="Progreso"]{flex-direction:column;align-items:stretch;gap:0.4rem;}
-    tbody td[data-label="Progreso"]::before{margin-bottom:0.25rem;}
-    tbody td[data-label="Progreso"] .prog-wrap{min-width:0;}
-    tbody td[data-label="Progreso"] .prog-bar{min-width:0;}
+    .table-box tbody td[data-label="#"]{justify-content:flex-start;}
+    .table-box tbody td[data-label="#"]::before{margin-right:0.5rem;}
+    .table-box tbody td[data-label="Agente"]{justify-content:space-between;}
+    .table-box tbody td[data-label="Agente"] .agent-btn{text-align:right;}
+    .table-box tbody td[data-label="ID Producer"] .id{text-align:right;}
+    .table-box tbody td[data-label="Pólizas / NAP"]{align-items:flex-start;}
+    .table-box tbody td[data-label="Pólizas / NAP"] .pol-cell{text-align:right;width:100%;align-items:flex-end;}
+    .table-box tbody td[data-label="Progreso"]{flex-direction:column;align-items:stretch;gap:0.4rem;}
+    .table-box tbody td[data-label="Progreso"]::before{margin-bottom:0.25rem;}
+    .table-box tbody td[data-label="Progreso"] .prog-wrap{min-width:0;}
+    .table-box tbody td[data-label="Progreso"] .prog-bar{min-width:0;}
+
+    /* === Tabla del MODAL: modo tarjeta === */
+    .modal-table-scroll{overflow-x:visible;}
+    .modal-table, .modal-table thead, .modal-table tbody, .modal-table tr, .modal-table td {
+      display:block; width:100%; min-width:0;
+    }
+    .modal-table thead{display:none;}
+
+    .modal-table tbody tr{
+      background:var(--bg-hover);
+      border:1px solid var(--border);
+      border-left:3px solid var(--gold);
+      border-radius:10px;
+      padding:0.75rem 1rem;
+      margin-bottom:0.75rem;
+    }
+    .modal-table tbody tr:hover{background:var(--bg-hover);}
+    .modal-table tbody td{
+      padding:0.5rem 0;
+      border-bottom:1px dashed rgba(255,255,255,0.06);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:0.75rem;
+      font-size:0.85rem;
+      white-space:normal;
+      text-align:left !important;
+    }
+    .modal-table tbody td:last-child{border-bottom:none;padding-bottom:0;}
+    .modal-table tbody td:first-child{padding-top:0;}
+    .modal-table tbody td::before{
+      content: attr(data-label);
+      font-size:0.65rem;
+      color:var(--text-secondary);
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-weight:600;
+      flex-shrink:0;
+      min-width:80px;
+      text-align:left;
+    }
+    .modal-table tbody td[data-label="#"]::before{content:"#";}
+    .modal-table tbody td[data-label="#"]{justify-content:flex-start;}
+    .modal-table tbody td .value-cell{ text-align:right; font-weight:600; }
+    .modal-table tbody td.col-num{ text-align:right; }
+    .modal-table tbody td.col-num::before{ text-align:left; }
   }
 </style>
 </head>
@@ -304,12 +353,10 @@ const GOAL_NAP = 5000;
 const RANGE_START = new Date(2026, 8, 21);
 const RANGE_END   = new Date(2026, 9, 18);
 
-// === IMAGEN DEL LOGO (parte superior) ===
 const LOGO_DRIVE_ID = '1chC0zMu-GjoSINFCYo4pNicsi-TaS79L';
 const LOGO_URL      = `https://drive.google.com/thumbnail?id=${LOGO_DRIVE_ID}&sz=w1600`;
 const LOGO_FB       = `https://lh3.googleusercontent.com/d/${LOGO_DRIVE_ID}=w1600`;
 
-// === IMAGEN DE LA COMPETENCIA (panel central) ===
 const REF_DRIVE_ID = '1MatCrbJ9Qw-0tLwUDg0x9Bh5UTzy5kl2';
 const REF_URL      = `https://drive.google.com/thumbnail?id=${REF_DRIVE_ID}&sz=w1600`;
 const REF_FB       = `https://lh3.googleusercontent.com/d/${REF_DRIVE_ID}=w1600`;
@@ -615,12 +662,12 @@ function openModal(agent) {
     });
     available.forEach(c => { if (!order.includes(c)) order.push(c); });
 
-    let tableHtml = `<table class="modal-table"><thead><tr><th style="width:40px;">#</th>`;
+    let tableHtml = `<div class="modal-table-scroll"><table class="modal-table"><thead><tr><th style="width:40px;">#</th>`;
     order.forEach(col => { tableHtml += `<th>${escapeHtml(col)}</th>`; });
     tableHtml += `</tr></thead><tbody>`;
 
     agent.records.forEach((rec, i) => {
-      tableHtml += `<tr><td class="col-id">${i + 1}</td>`;
+      tableHtml += `<tr><td data-label="#" class="col-id">${i + 1}</td>`;
       order.forEach(col => {
         const val = rec[col];
         const lc = col.toLowerCase();
@@ -630,24 +677,24 @@ function openModal(agent) {
         if (lc.includes('id')) cls = 'col-id';
 
         if (val === null || val === undefined || val === '') {
-          tableHtml += `<td class="${cls.trim()}">—</td>`;
+          tableHtml += `<td data-label="${escapeHtml(col)}" class="${cls.trim()}">—</td>`;
           return;
         }
         if (lc === 'estatus' || lc === 'status') {
-          tableHtml += `<td class="${cls.trim()}"><span class="status-pill">${escapeHtml(val)}</span></td>`;
+          tableHtml += `<td data-label="${escapeHtml(col)}" class="${cls.trim()}"><span class="status-pill">${escapeHtml(val)}</span></td>`;
           return;
         }
         if (lc === 'nap' || lc === 'prima') {
           const n = parseNap(val);
-          tableHtml += `<td class="${cls.trim()}">${!isNaN(n) ? formatNum(n) : escapeHtml(val)}</td>`;
+          tableHtml += `<td data-label="${escapeHtml(col)}" class="${cls.trim()}">${!isNaN(n) ? formatNum(n) : escapeHtml(val)}</td>`;
           return;
         }
-        tableHtml += `<td class="${cls.trim()}">${escapeHtml(val)}</td>`;
+        tableHtml += `<td data-label="${escapeHtml(col)}" class="${cls.trim()}">${escapeHtml(val)}</td>`;
       });
       tableHtml += `</tr>`;
     });
 
-    tableHtml += `</tbody></table>`;
+    tableHtml += `</tbody></table></div>`;
     body.innerHTML = tableHtml;
   }
 
@@ -661,7 +708,6 @@ function closeModal() {
 }
 
 function loadImgs() {
-  // --- Logo superior (agencia) ---
   const logoImg    = document.getElementById('logoImg');
   const logoHeader = document.getElementById('logoHeader');
   logoImg.src = LOGO_URL;
@@ -670,7 +716,6 @@ function loadImgs() {
     logoImg.src = LOGO_FB;
   };
 
-  // --- Imagen de la competencia (panel central) ---
   const img = document.getElementById('refImg');
   const fb  = document.getElementById('imgFb');
   img.src = REF_URL;
